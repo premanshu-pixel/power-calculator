@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Power calculator with safety analysis - Residential/Industrial</title>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #4b88a2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+h1 {
+    color: #333;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.usage-selector {
+    background: linear-gradient(135deg, #a42825 0%, #8d1f2e 100%);
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    color: white;
+}
+
+.usage-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.usage-btn {
+    flex: 1;
+    padding: 12px;
+    background: rgba(255,255,255,0.2);
+    border: 2px solid white;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-radius: 10px;
+    font-size: 1rem;
+}
+
+.usage-btn.active {
+    background: white;
+    color: #f5576c;
+}
+
+.usage-btn:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateY(-2px);
+}
+
+.card {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.card h2 {
+    color: #555;
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+}
+
+.wire-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.wire-options label {
+    display: block;
+    padding: 8px;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.wire-options label:hover {
+    background: #e9ecef;
+    transform: translateX(5px);
+}
+
+.wire-options input {
+    margin-right: 10px;
+}
+
+select, input {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    transition: 0.3s;
+    font-family: inherit;
+}
+
+select:focus, input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.usage-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+button {
+    background: linear-gradient(135deg, #66ea7e 0%, #4ba25b 100%);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    font-size: 1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+.result-card {
+    background: white;
+    border: 2px solid #667eea;
+    color: #333;
+    border-radius: 15px;
+    padding: 20px;
+    margin-top: 20px;
+    animation: slideIn 0.3s ease;
+}
+
+.result-card h3 {
+    margin-bottom: 15px;
+    color: #667eea;
+}
+
+.result-card p {
+    margin: 10px 0;
+}
+
+.cost-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.device-item {
+    background: white;
+    padding: 10px;
+    margin: 8px 0;
+    border-radius: 6px;
+    border-left: 5px solid #667eea;
+}
+
+.remove-device {
+    background: #dc3545;
+    float: right;
+    width: auto;
+    padding: 5px 10px;
+    margin-top: 0;
+}
+
+.loading {
+    text-align: center;
+    padding: 20px;
+    font-size: 1.2em;
+}
+
+.error {
+    color: #dc3545;
+    text-align: center;
+    padding: 20px;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+    }
+    
+    .usage-inputs {
+        grid-template-columns: 1fr;
+    }
+    
+    .wire-options {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>⚡ Power calculator with safety analysis</h1>
+    <p class="subtitle">Residential & Industrial - Calculate load on fuse</p>
+
+    <!-- Usage Type Selection -->
+    <div class="usage-selector">
+        <h3>🏭 Select Usage Type</h3>
+        <div class="usage-buttons">
+            <button class="usage-btn active" data-type="residential">🏠 Residential (230V)</button>
+            <button class="usage-btn" data-type="industrial">🏭 Industrial (415V)</button>
+        </div>
+    </div>
+
+    <!-- Wire Selection -->
+    <div class="card">
+        <h2>📏 Select Wire Size</h2>
+        <div class="wire-options" id="wireOptions"></div>
+    </div>
+
+    <!-- Device Selection -->
+    <div class="card">
+        <h2>🔌 Add Devices</h2>
+        <select id="deviceSelect"></select>
+        
+        <div style="margin-top: 15px;">
+            <input type="text" id="customDeviceName" placeholder="Custom device name" style="width: 100%; margin-bottom: 10px;">
+            <input type="number" id="customPower" placeholder="Power in Watts" style="width: 100%;">
+            <button id="addCustomBtn">➕ Add Custom Device</button>
+        </div>
+        
+        <button id="addPredefinedBtn">➕ Add Selected Device</button>
+        
+        <h3 style="margin-top: 20px;">📋 Device List</h3>
+        <div id="deviceListContainer">
+            <p style="text-align: center; color: #999; padding: 20px;">No devices added yet</p>
+        </div>
+    </div>
+
+    <!-- Usage Hours -->
+    <div class="card">
+        <h2>⏰ Usage Schedule</h2>
+        <div class="usage-inputs">
+            <div>
+                <label>Hours per day:</label>
+                <input type="number" id="hoursPerDay" value="8" step="0.5" min="0">
+            </div>
+            <div>
+                <label>Days per month:</label>
+                <input type="number" id="daysPerMonth" value="30" min="1" max="31">
+            </div>
+        </div>
+    </div>
+
+    <button id="calculateBtn">🔍 Calculate Total Safety & Cost</button>
+
+    <div id="result" class="result-card" style="display:none;"></div>
+</div>
+
+<script>
+// Data passed from Flask backend
+const residentialDevices = {{ residential_devices|tojson }};
+const industrialDevices = {{ industrial_devices|tojson }};
+const residentialWires = {{ residential_wires|tojson }};
+const industrialWires = {{ industrial_wires|tojson }};
+const tariffRates = {{ tariff_rates|tojson }};
+
+console.log("Data loaded successfully:", {
+    residentialDevices: Object.keys(residentialDevices).length,
+    industrialDevices: Object.keys(industrialDevices).length,
+    residentialWires: Object.keys(residentialWires).length,
+    industrialWires: Object.keys(industrialWires).length
+});
+
+let currentUsageType = "residential";
+let selectedDevices = [];
+let customDevices = [];
+
+// Initialize
+function init() {
+    loadWireOptions();
+    loadDeviceOptions();
+    setupEventListeners();
+}
+
+function loadWireOptions() {
+    const box = document.getElementById("wireOptions");
+    const wires = currentUsageType === "residential" ? residentialWires : industrialWires;
+    
+    box.innerHTML = "";
+    for(let size in wires) {
+        box.innerHTML += `
+            <label>
+                <input type="radio" name="wire" value="${size}">
+                ${size} mm² (Max ${wires[size].power}W / ${wires[size].current}A)
+            </label>
+        `;
+    }
+}
+
+function loadDeviceOptions() {
+    const select = document.getElementById("deviceSelect");
+    const devices = currentUsageType === "residential" ? residentialDevices : industrialDevices;
+    
+    select.innerHTML = '<option value="">-- Choose Device --</option>';
+    
+    for(let name in devices) {
+        select.innerHTML += `
+            <option value="${name}">
+                ${name} - ${devices[name]}W
+            </option>
+        `;
+    }
+}
+
+function setupEventListeners() {
+    document.querySelectorAll(".usage-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            document.querySelectorAll(".usage-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            currentUsageType = btn.dataset.type;
+            loadWireOptions();
+            loadDeviceOptions();
+            // Clear current devices when switching type
+            selectedDevices = [];
+            customDevices = [];
+            renderDevices();
+            document.getElementById("result").style.display = "none";
+        });
+    });
+    
+    document.getElementById("addPredefinedBtn").addEventListener("click", () => {
+        const select = document.getElementById("deviceSelect");
+        const val = select.value;
+        
+        if(!val) {
+            alert("Please select a device");
+            return;
+        }
+        
+        const devices = currentUsageType === "residential" ? residentialDevices : industrialDevices;
+        selectedDevices.push({
+            name: val,
+            power: devices[val]
+        });
+        
+        renderDevices();
+        select.value = "";
+    });
+    
+    document.getElementById("addCustomBtn").addEventListener("click", () => {
+        const name = document.getElementById("customDeviceName").value.trim();
+        const power = parseFloat(document.getElementById("customPower").value);
+        
+        if(!name) {
+            alert("Please enter device name");
+            return;
+        }
+        
+        if(isNaN(power) || power <= 0) {
+            alert("Please enter valid power in watts");
+            return;
+        }
+        
+        customDevices.push({
+            name: name,
+            power: power
+        });
+        
+        document.getElementById("customDeviceName").value = "";
+        document.getElementById("customPower").value = "";
+        renderDevices();
+    });
+    
+    document.getElementById("calculateBtn").addEventListener("click", calculate);
+}
+
+function renderDevices() {
+    const box = document.getElementById("deviceListContainer");
+    const all = [...selectedDevices, ...customDevices];
+    
+    if(all.length === 0) {
+        box.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No devices added yet</p>';
+        return;
+    }
+    
+    let totalPower = 0;
+    let html = '<div style="max-height: 300px; overflow-y: auto;">';
+    
+    all.forEach((d, index) => {
+        totalPower += d.power;
+        html += `
+            <div class="device-item">
+                <strong>${d.name}</strong> - ${d.power}W
+                <button class="remove-device" onclick="removeDevice(${index})">Remove</button>
+            </div>
+        `;
+    });
+    
+    html += `</div><div style="margin-top: 15px; padding: 10px; background: #e9ecef; border-radius: 8px;">
+        <strong>Total Power: ${totalPower}W</strong>
+    </div>`;
+    
+    box.innerHTML = html;
+}
+
+function removeDevice(index) {
+    const total1 = selectedDevices.length;
+    if(index < total1) {
+        selectedDevices.splice(index, 1);
+    } else {
+        customDevices.splice(index - total1, 1);
+    }
+    renderDevices();
+}
+
+async function calculate() {
+    const wire = document.querySelector('input[name="wire"]:checked');
+    if(!wire) {
+        alert("Please select a wire size");
+        return;
+    }
+    
+    const all = [...selectedDevices, ...customDevices];
+    if(all.length === 0) {
+        alert("Please add at least one device");
+        return;
+    }
+    
+    const hoursPerDay = parseFloat(document.getElementById("hoursPerDay").value);
+    const daysPerMonth = parseInt(document.getElementById("daysPerMonth").value);
+    
+    const requestData = {
+        usage_type: currentUsageType,
+        wire_size: wire.value,
+        devices: selectedDevices.map(d => d.name),
+        custom_devices: customDevices,
+        hours_per_day: hoursPerDay,
+        days_per_month: daysPerMonth
+    };
+    
+    const resultDiv = document.getElementById("result");
+    resultDiv.style.display = "block";
+    resultDiv.innerHTML = '<div class="loading">⏳ Calculating... Please wait</div>';
+    
+    try {
+        const response = await fetch("/calculate", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(requestData)
+        });
+        
+        const data = await response.json();
+        
+        if(data.error) {
+            resultDiv.innerHTML = `<div class="error">❌ Error: ${data.error}</div>`;
+            return;
+        }
+        
+        displayResult(data);
+    } catch(error) {
+        resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}. Make sure the server is running.</div>`;
+    }
+}
+
+function displayResult(data) {
+    const resultDiv = document.getElementById("result");
+    const cost = data.electricity_cost;
+    const loadPercent = (data.total_power_w / data.wire_power_capacity_w * 100).toFixed(1);
+    
+    resultDiv.innerHTML = `
+        <h3>📊 Calculation Results</h3>
+        <p><strong>🏭 Usage Type:</strong> ${data.usage_type_name}</p>
+        <p><strong>📏 Wire Size:</strong> ${data.wire_size_mm2} mm²</p>
+        <p><strong>⚡ Wire Capacity:</strong> ${data.wire_power_capacity_w}W / ${data.wire_current_capacity_a}A</p>
+        <p><strong>🔌 Total Load:</strong> ${data.total_power_w}W / ${data.total_current_a}A</p>
+        <p><strong>⚡ Voltage:</strong> ${data.voltage}V</p>
+        <p><strong>📊 Load Percentage:</strong> <span style="color:${data.color}; font-weight:bold">${loadPercent}%</span></p>
+        <p><strong>🛡️ Safety Status:</strong> <span style="color:${data.color}; font-weight:bold">${data.safety_status}</span></p>
+        <p><strong>${data.load_percentage}</strong></p>
+        
+        ${data.recommended_wire_size ? `
+            <div style="background: #fff3cd; padding: 10px; border-radius: 8px; margin: 10px 0;">
+                💡 <strong>Recommendation:</strong> Consider using ${data.recommended_wire_size} mm² wire for safer operation
+            </div>
+        ` : '<div style="background: #d4edda; padding: 10px; border-radius: 8px; margin: 10px 0;">✅ Current wire size is adequate for your load</div>'}
+        
+        <div class="cost-section">
+            <h4>💰 Electricity Cost Calculation</h4>
+            <p><strong>Total Power:</strong> ${cost.power_kw} kW</p>
+            <p><strong>Daily Consumption:</strong> ${cost.daily_consumption_kwh} kWh/day</p>
+            <p><strong>Monthly Consumption:</strong> ${cost.monthly_consumption_kwh} kWh</p>
+            <p><strong>Tariff Rate:</strong> ${data.currency} ${data.tariff_rate}/kWh</p>
+            <p><strong style="font-size: 1.2em;">Estimated Monthly Cost:</strong> 
+               <strong style="color: #ffd700; font-size: 1.3em;">${data.currency} ${cost.monthly_cost.toLocaleString()}</strong></p>
+            <p><strong>Estimated Annual Cost:</strong> ${data.currency} ${cost.annual_cost.toLocaleString()}</p>
+            <small>Based on ${data.hours_per_day} hours/day × ${data.days_per_month} days/month</small>
+        </div>
+        
+        <div style="margin-top: 15px;">
+            <h4>📱 Connected Devices (${data.device_count})</h4>
+            ${data.devices.map(d => `<p>• ${d.name}: ${d.power}W</p>`).join('')}
+        </div>
+        
+        <small style="display: block; margin-top: 15px; color: #666;">📅 ${data.timestamp}</small>
+    `;
+    
+    // Scroll to results
+    resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Make removeDevice globally accessible
+window.removeDevice = removeDevice;
+
+// Initialize on load
+init();
+</script>
+</body>
+</html>
