@@ -1,0 +1,12 @@
+[
+  {
+    "wire_size_mm2": "1.0",
+    "wire_power_capacity_w": 2760,
+    "device_name": "AC (1.5 ton)",
+    "device_power_w": 2000,
+    "safety_status": "\u2705 Safe",
+    "color": "green",
+    "timestamp": "2026-04-21 21:29:55",
+    "voltage": 230
+  }
+]
